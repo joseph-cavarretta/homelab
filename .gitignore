@@ -1,0 +1,77 @@
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+.cursor/
+.vim/
+.nvim/
+.history/
+.cache/
+
+# --- Ansible ---
+*.retry
+ansible.cfg.local
+inventory.local
+vault.yml
+vault_*.yml
+*.vault
+*.pem
+*.key
+*.crt
+*.pfx
+
+ansible/.facts/
+ansible/inventory/*.cache
+ansible/inventory/*_cache
+
+# --- Kubernetes / Helm / Helmfile ---
+**/.helm/
+**/charts/
+**/*.tgz
+helmfile.d/
+.helmfile/
+
+# kubeconfig files
+kubeconfig
+kubeconfig.*
+**/kubeconfig
+**/kubeconfig.*
+
+# --- Terraform ---
+**/.terraform/*
+**/.terraform.lock.hcl
+**/terraform.tfstate
+**/terraform.tfstate.*
+**/crash.log
+**/crash.*.log
+**/*.tfvars
+**/*.tfvars.json
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+
+# --- Logs / artifacts ---
+*.log
+*.tmp
+*.bak
+*.old
+tmp/
+dist/
+build/
+
+# --- Secrets ---
+.env
+.env.*
+*.secret
+secrets/
+**/secrets/
+
