@@ -1,0 +1,29 @@
+---
+- name: Ensure curl is installed
+  ansible.builtin.package:
+    name: curl
+    state: present
+
+- name: Disable swap now
+  ansible.builtin.command: swapoff -a
+  when: ansible_swaptotal_mb | int > 0
+  changed_when: true
+
+- name: Disable swap permanently in fstab
+  ansible.builtin.replace:
+    path: /etc/fstab
+    regexp: '^([^#].*\sswap\s.*)$'
+    replace: '# \1'
+
+# k3s on Raspberry Pi requires memory cgroups, which Ubuntu on Pi
+# does not enable by default
+- name: Enable memory cgroups on Raspberry Pi nodes
+  ansible.builtin.replace:
+    path: /boot/firmware/cmdline.txt
+    regexp: '^((?!.*cgroup_enable=memory).*)$'
+    replace: '\1 cgroup_memory=1 cgroup_enable=memory'
+  when: "'workers' in group_names and ansible_architecture == 'aarch64'"
+  notify: reboot node
+
+- name: Flush handlers so nodes reboot before k3s install
+  ansible.builtin.meta: flush_handlers

@@ -1,0 +1,29 @@
+---
+- name: Check whether k3s is already installed
+  ansible.builtin.stat:
+    path: /usr/local/bin/k3s
+  register: k3s_bin
+
+# --disable servicelb: MetalLB (managed by Argo CD) provides LoadBalancer IPs
+- name: Install k3s server
+  ansible.builtin.shell: |
+    curl -sfL https://get.k3s.io | \
+      INSTALL_K3S_VERSION="{{ k3s_version }}" \
+      INSTALL_K3S_EXEC="server --disable servicelb --write-kubeconfig-mode 644" \
+      sh -
+  when: not k3s_bin.stat.exists
+  changed_when: true
+
+- name: Wait for node token
+  ansible.builtin.wait_for:
+    path: /var/lib/rancher/k3s/server/node-token
+    timeout: 120
+
+- name: Read node token
+  ansible.builtin.slurp:
+    src: /var/lib/rancher/k3s/server/node-token
+  register: node_token_file
+
+- name: Expose join token as a fact for the agent role
+  ansible.builtin.set_fact:
+    k3s_token: "{{ node_token_file.content | b64decode | trim }}"

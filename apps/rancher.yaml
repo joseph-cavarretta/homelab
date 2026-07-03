@@ -1,0 +1,34 @@
+# Rancher management UI. Depends on cert-manager (sync-wave 1) and a
+# hostname that resolves on your LAN (e.g. an entry in your router's DNS
+# or /etc/hosts pointing at a MetalLB IP).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: rancher
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: default
+  source:
+    repoURL: https://releases.rancher.com/server-charts/stable
+    chart: rancher
+    targetRevision: 2.10.1
+    helm:
+      valuesObject:
+        hostname: rancher.lab.local  # CHANGE_ME
+        replicas: 1
+        bootstrapPassword: admin  # CHANGE_ME after first login
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cattle-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 30s
