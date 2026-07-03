@@ -17,15 +17,19 @@ Ansible configuration management for a single-node homelab server running Arch L
 
 ```bash
 # verify connectivity
-ansible all -i ansible/inventory.ini -m ping
+make ping
+
+# gather host facts
+make facts
 
 # run a playbook
-ansible-playbook -i ansible/inventory.ini <playbook>.yml
+make playbook PLAYBOOK=<playbook>.yml
 ```
 
 ## Project Structure
 
 ```
-ansible/
-└── inventory.ini    # host definitions
+├── Makefile
+└── ansible/
+    └── inventory.ini    # host definitions
 ```
