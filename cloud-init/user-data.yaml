@@ -1,0 +1,30 @@
+#cloud-config
+# First-boot config for Raspberry Pi worker nodes (Ubuntu Server 24.04).
+#
+# Usage: in Raspberry Pi Imager choose "Ubuntu Server 24.04 LTS (64-bit)",
+# then either paste these settings into the Imager's customization screen,
+# or copy this file as `user-data` onto the boot (system-boot) partition
+# after flashing. Change the hostname per node: pi-01, pi-02, pi-03.
+
+hostname: pi-01
+
+users:
+  - name: joseph
+    groups: [sudo]
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh_authorized_keys:
+      - CHANGE_ME  # your ssh public key
+
+package_update: true
+packages:
+  - curl
+
+# k3s on Raspberry Pi needs memory cgroups enabled; the ansible common role
+# also enforces this, but doing it at first boot saves one reboot later.
+write_files:
+  - path: /etc/default/grub.d/99-cgroup.cfg
+    content: |
+      # unused on Pi (no grub) — kept for documentation; cmdline is handled below
+runcmd:
+  - sed -i '/cgroup_enable=memory/!s/$/ cgroup_memory=1 cgroup_enable=memory/' /boot/firmware/cmdline.txt

@@ -1,0 +1,15 @@
+---
+- name: Check whether k3s is already installed
+  ansible.builtin.stat:
+    path: /usr/local/bin/k3s
+  register: k3s_bin
+
+- name: Join node to the cluster as an agent
+  ansible.builtin.shell: |
+    curl -sfL https://get.k3s.io | \
+      INSTALL_K3S_VERSION="{{ k3s_version }}" \
+      K3S_URL="https://{{ hostvars[groups['control_plane'][0]].ansible_host }}:6443" \
+      K3S_TOKEN="{{ hostvars[groups['control_plane'][0]].k3s_token }}" \
+      sh -
+  when: not k3s_bin.stat.exists
+  changed_when: true

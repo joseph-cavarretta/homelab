@@ -1,0 +1,19 @@
+# Argo CD helm values — kept intentionally small for a homelab.
+# Chart: https://github.com/argoproj/argo-helm/tree/main/charts/argo-cd
+
+configs:
+  params:
+    # terminate TLS at the ingress / port-forward instead of the argocd server
+    server.insecure: true
+
+# single-node control plane: no need for HA replicas
+redis-ha:
+  enabled: false
+controller:
+  replicas: 1
+server:
+  replicas: 1
+repoServer:
+  replicas: 1
+applicationSet:
+  replicas: 1
