@@ -18,7 +18,10 @@ spec:
       valuesObject:
         hostname: rancher.lab.local  # CHANGE_ME
         replicas: 1
-        bootstrapPassword: admin  # CHANGE_ME after first login
+        # bootstrapPassword omitted deliberately — never commit it. Rancher
+        # generates one into cattle-system/bootstrap-secret on first install:
+        #   kubectl -n cattle-system get secret bootstrap-secret \
+        #     -o go-template='{{ .data.bootstrapPassword | base64decode }}'
   destination:
     server: https://kubernetes.default.svc
     namespace: cattle-system
