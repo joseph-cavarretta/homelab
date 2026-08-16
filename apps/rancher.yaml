@@ -1,6 +1,4 @@
-# Rancher management UI. Depends on cert-manager (sync-wave 1) and a
-# hostname that resolves on your LAN (e.g. an entry in your router's DNS
-# or /etc/hosts pointing at a MetalLB IP).
+# Rancher management UI
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -18,10 +16,6 @@ spec:
       valuesObject:
         hostname: rancher.lab.local  # CHANGE_ME
         replicas: 1
-        # bootstrapPassword omitted deliberately — never commit it. Rancher
-        # generates one into cattle-system/bootstrap-secret on first install:
-        #   kubectl -n cattle-system get secret bootstrap-secret \
-        #     -o go-template='{{ .data.bootstrapPassword | base64decode }}'
   destination:
     server: https://kubernetes.default.svc
     namespace: cattle-system
