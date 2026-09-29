@@ -15,6 +15,24 @@
     regexp: '^([^#].*\sswap\s.*)$'
     replace: '# \1'
 
+- name: Check wifi radio state
+  ansible.builtin.command: nmcli radio wifi
+  register: wifi_radio_state
+  changed_when: false
+
+- name: Disable wifi radio
+  ansible.builtin.command: nmcli radio wifi off
+  when: wifi_radio_state.stdout | trim == 'enabled'
+  changed_when: true
+
+- name: Allow ethernet as default route on control plane
+  community.general.nmcli:
+    conn_name: "Wired connection 1"
+    never_default4: false
+    state: present
+  when: "'control_plane' in group_names"
+  notify: reapply ethernet connection
+
 # k3s on Raspberry Pi requires memory cgroups, which Ubuntu on Pi
 # does not enable by default
 - name: Enable memory cgroups on Raspberry Pi nodes

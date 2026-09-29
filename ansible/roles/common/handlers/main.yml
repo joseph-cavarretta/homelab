@@ -2,3 +2,7 @@
 - name: reboot node
   ansible.builtin.reboot:
     reboot_timeout: 300
+
+- name: reapply ethernet connection
+  ansible.builtin.command: nmcli connection up "Wired connection 1"
+  changed_when: true
