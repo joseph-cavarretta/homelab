@@ -15,5 +15,16 @@ server:
   replicas: 1
 repoServer:
   replicas: 1
+  # default 1s liveness/readiness timeout is too tight for git/gpg/helm
+  # work on Raspberry Pi hardware; was causing chronic false-positive
+  # liveness failures and restart loops
+  livenessProbe:
+    timeoutSeconds: 5
+  readinessProbe:
+    timeoutSeconds: 5
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
 applicationSet:
   replicas: 1
