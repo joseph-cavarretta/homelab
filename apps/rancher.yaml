@@ -11,10 +11,10 @@ spec:
   source:
     repoURL: https://releases.rancher.com/server-charts/stable
     chart: rancher
-    targetRevision: 2.10.1
+    targetRevision: 2.13.0
     helm:
       valuesObject:
-        hostname: rancher.lab.local  # CHANGE_ME
+        hostname: rancher.local
         replicas: 1
   destination:
     server: https://kubernetes.default.svc
