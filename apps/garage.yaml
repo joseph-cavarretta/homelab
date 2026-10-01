@@ -1,28 +1,30 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: minio
+  name: garage
   namespace: argocd
 spec:
   project: default
   source:
-    repoURL: https://charts.min.io/
-    chart: minio
-    targetRevision: 5.4.0
+    repoURL: https://git.deuxfleurs.fr/Deuxfleurs/garage
+    path: script/helm/garage
+    targetRevision: main
     helm:
       valuesObject:
-        mode: standalone
-        existingSecret: minio-credentials
+        garage:
+          singleNode: true
+        deployment:
+          replicaCount: 1
         persistence:
-          size: 50Gi
-        resources:
-          requests:
-            memory: 1Gi
+          meta:
+            size: 100Mi
+          data:
+            size: 50Gi
         nodeSelector:
           kubernetes.io/hostname: arch-mini
   destination:
     server: https://kubernetes.default.svc
-    namespace: minio
+    namespace: garage
   syncPolicy:
     automated:
       prune: true
