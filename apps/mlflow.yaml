@@ -35,6 +35,16 @@ spec:
                 key: secret-access-key
         nodeSelector:
           kubernetes.io/hostname: arch-mini
+        ingress:
+          enabled: true
+          className: traefik
+          annotations:
+            traefik.ingress.kubernetes.io/router.middlewares: mlflow-lan-only@kubernetescrd
+          hosts:
+            - host: mlflow.local
+              paths:
+                - path: /
+                  pathType: Prefix
   destination:
     server: https://kubernetes.default.svc
     namespace: mlflow
