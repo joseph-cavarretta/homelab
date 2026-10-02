@@ -1,7 +1,5 @@
-# Only arch-mini may reach these UIs. Its browser traffic hits the Traefik pod on the
-# same node, so kube-proxy masquerades it to arch-mini's pod-bridge address (cni0,
-# 10.42.0.1) whatever the Service's externalTrafficPolicy. Other LAN hosts keep their
-# real IP under Local, and the other nodes show up as their own pod-network addresses.
+# Only arch-mini may reach these UIs. Traefik runs on arch-mini, so kube-proxy rewrites
+# arch-mini's own requests to its pod-bridge IP (cni0, 10.42.0.1).
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
