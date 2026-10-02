@@ -16,6 +16,9 @@ spec:
       valuesObject:
         hostname: rancher.local
         replicas: 1
+        ingress:
+          extraAnnotations:
+            traefik.ingress.kubernetes.io/router.middlewares: cattle-system-lan-only@kubernetescrd
   destination:
     server: https://kubernetes.default.svc
     namespace: cattle-system
