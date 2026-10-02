@@ -6,4 +6,5 @@ metadata:
 spec:
   valuesContent: |-
     service:
-      externalTrafficPolicy: Local
+      spec:
+        externalTrafficPolicy: Local
