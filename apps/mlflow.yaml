@@ -15,6 +15,8 @@ spec:
           backendStoreUri: "sqlite:////mlflow/mlflow.db"
           artifactsDestination: "s3://llm-platform/mlflow"
         server:
+          value_options:
+            allowed_hosts: "mlflow.local,mlflow-mlflow.mlflow.svc.cluster.local:5000,mlflow-mlflow.mlflow:5000"
           flag_options:
             - serve_artifacts
         storage:
