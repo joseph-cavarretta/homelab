@@ -1,5 +1,5 @@
-# Only arch-mini may reach these UIs. Traefik runs on arch-mini, so kube-proxy rewrites
-# arch-mini's own requests to its pod-bridge IP (cni0, 10.42.0.1).
+# Only the control-plane node may reach these UIs. Traefik runs on that node, so
+# kube-proxy rewrites its own requests to its pod-bridge IP (cni0, 10.42.0.1).
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
