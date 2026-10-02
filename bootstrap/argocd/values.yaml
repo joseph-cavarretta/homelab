@@ -13,6 +13,12 @@ controller:
   replicas: 1
 server:
   replicas: 1
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    hostname: argocd.local
+    annotations:
+      traefik.ingress.kubernetes.io/router.middlewares: argocd-lan-only@kubernetescrd
 repoServer:
   replicas: 1
   # default 1s liveness/readiness timeout is too tight for git/gpg/helm
