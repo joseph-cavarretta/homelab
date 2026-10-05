@@ -12,7 +12,8 @@ spec:
     helm:
       valuesObject:
         garage:
-          singleNode: true
+          singleNode: false
+          replicationFactor: "1"
         deployment:
           replicaCount: 1
         persistence:
