@@ -16,7 +16,7 @@ spec:
           artifactsDestination: "s3://llm-platform/mlflow"
         server:
           value_options:
-            allowed_hosts: "mlflow.local,mlflow-mlflow.mlflow.svc.cluster.local:5000,mlflow-mlflow.mlflow:5000"
+            allowed_hosts: "mlflow.internal,mlflow-mlflow.mlflow.svc.cluster.local:5000,mlflow-mlflow.mlflow:5000"
           flag_options:
             - serve_artifacts
         storage:
@@ -43,7 +43,7 @@ spec:
           annotations:
             traefik.ingress.kubernetes.io/router.middlewares: mlflow-lan-only@kubernetescrd
           hosts:
-            - host: mlflow.local
+            - host: mlflow.internal
               paths:
                 - path: /
                   pathType: Prefix
