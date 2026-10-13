@@ -16,7 +16,7 @@ server:
   ingress:
     enabled: true
     ingressClassName: traefik
-    hostname: argocd.local
+    hostname: argocd.internal
     annotations:
       traefik.ingress.kubernetes.io/router.middlewares: argocd-lan-only@kubernetescrd
 repoServer:
