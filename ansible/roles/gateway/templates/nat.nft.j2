@@ -1,0 +1,12 @@
+#!/usr/bin/nft -f
+# Own table only: never `flush ruleset` here, k3s keeps its rules in the same kernel.
+# Declare-then-delete makes reloading this file idempotent.
+table ip homelab_nat
+delete table ip homelab_nat
+
+table ip homelab_nat {
+  chain postrouting {
+    type nat hook postrouting priority srcnat; policy accept;
+    ip saddr {{ gateway_lan_cidr }} oifname "{{ gateway_uplink }}" masquerade
+  }
+}

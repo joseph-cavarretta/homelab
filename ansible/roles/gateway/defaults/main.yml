@@ -1,0 +1,3 @@
+---
+gateway_lan_cidr: 192.168.8.0/24
+gateway_uplink: wlp3s0

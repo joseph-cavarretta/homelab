@@ -1,0 +1,11 @@
+---
+# The GL.iNet router has no uplink; send internet traffic through arch-mini
+# instead (roles/gateway). Address and DNS still come from the router's DHCP.
+- name: Route internet traffic through the control plane
+  community.general.nmcli:
+    conn_name: "{{ lan_route_connection }}"
+    never_default4: true
+    routes4:
+      - "0.0.0.0/0 {{ lan_route_gateway }}"
+    state: present
+  notify: reapply lan connection

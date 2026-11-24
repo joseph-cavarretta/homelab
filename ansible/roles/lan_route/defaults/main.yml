@@ -1,0 +1,4 @@
+---
+lan_route_connection: Wired connection 1
+lan_route_iface: eth0
+lan_route_gateway: "{{ hostvars[groups['control_plane'][0]].ansible_host }}"

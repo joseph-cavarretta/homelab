@@ -1,0 +1,6 @@
+# Pin k3s to the homelab LAN. Without this it picks the interface holding the
+# default route: Wi-Fi, whose address the home router assigns and can change.
+node-ip: {{ ansible_host }}
+flannel-iface: {{ k3s_flannel_iface }}
+tls-san:
+  - {{ ansible_host }}

@@ -1,4 +1,7 @@
 ---
+- name: Write k3s config
+  ansible.builtin.include_tasks: config.yml
+
 - name: Check whether k3s is already installed
   ansible.builtin.stat:
     path: /usr/local/bin/k3s
