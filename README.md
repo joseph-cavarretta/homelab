@@ -19,8 +19,11 @@ GitOps via Argo CD.
 | Kubernetes | k3s (traefik ingress, servicelb disabled) | `ansible/roles/k3s_*` |
 | GitOps | Argo CD (app-of-apps) | `bootstrap/`, `apps/` |
 | LoadBalancer IPs | MetalLB (L2) | `apps/metallb*.yaml`, `infra/metallb/` |
+| Ingress & allowlist | Traefik + `lan-only` IPAllowList | `apps/traefik-middleware.yaml`, `infra/traefik/` |
 | Certificates | cert-manager | `apps/cert-manager.yaml` |
 | Cluster UI | Rancher | `apps/rancher.yaml` |
+| Object storage | Garage (S3-compatible) | `apps/garage.yaml` |
+| ML tracking | MLflow (backed by Garage S3) | `apps/mlflow.yaml` |
 
 ## Bootstrap Runbook
 
@@ -83,12 +86,19 @@ becomes a managed app. From here on, cluster changes are pull requests.
 │   ├── argocd/values.yaml
 │   └── root-app.yaml         # app-of-apps entry point
 ├── apps/                     # Argo CD Applications (one file per app)
+│   ├── cert-manager.yaml
+│   ├── garage.yaml
 │   ├── metallb.yaml
 │   ├── metallb-config.yaml
-│   ├── cert-manager.yaml
-│   └── rancher.yaml
+│   ├── mlflow.yaml
+│   ├── rancher.yaml
+│   └── traefik-middleware.yaml
 └── infra/                    # raw manifests / values referenced by apps
-    └── metallb/ipaddresspool.yaml
+    ├── metallb/
+    │   └── ipaddresspool.yaml
+    └── traefik/
+        ├── ip-allowlist.yaml
+        └── traefik-config.yaml
 ```
 
 ## Adding an App
