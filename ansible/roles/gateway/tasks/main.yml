@@ -1,0 +1,44 @@
+---
+# arch-mini routes the homelab LAN to the internet over its Wi-Fi uplink; the
+# GL.iNet router is only a switch + DHCP. Not Arch's nftables.service: its default
+# /etc/nftables.conf flushes the whole ruleset, which would wipe k3s's rules.
+- name: Keep IPv4 forwarding on across reboots
+  ansible.builtin.copy:
+    dest: /etc/sysctl.d/90-homelab-gateway.conf
+    content: "net.ipv4.ip_forward = 1\n"
+    mode: "0644"
+  notify: apply sysctl
+
+- name: Install NAT rules for the homelab LAN
+  ansible.builtin.template:
+    src: nat.nft.j2
+    dest: /etc/homelab-nat.nft
+    mode: "0644"
+  notify: reload homelab-nat
+
+- name: Install homelab-nat unit
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/homelab-nat.service
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=NAT the homelab LAN out through the uplink
+      After=network-pre.target
+
+      [Service]
+      Type=oneshot
+      RemainAfterExit=yes
+      ExecStart=/usr/bin/nft -f /etc/homelab-nat.nft
+      ExecReload=/usr/bin/nft -f /etc/homelab-nat.nft
+      ExecStop=/usr/bin/nft delete table ip homelab_nat
+
+      [Install]
+      WantedBy=multi-user.target
+  notify: reload homelab-nat
+
+- name: Enable and start homelab-nat
+  ansible.builtin.systemd_service:
+    name: homelab-nat
+    enabled: true
+    state: started
+    daemon_reload: true

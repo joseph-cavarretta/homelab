@@ -20,15 +20,17 @@
   register: wifi_radio_state
   changed_when: false
 
+# workers only: arch-mini's Wi-Fi is the homelab's internet uplink (roles/gateway)
 - name: Disable wifi radio
   ansible.builtin.command: nmcli radio wifi off
-  when: wifi_radio_state.stdout | trim == 'enabled'
+  when: "'workers' in group_names and wifi_radio_state.stdout | trim == 'enabled'"
   changed_when: true
 
-- name: Allow ethernet as default route on control plane
+# the GL.iNet router has no uplink; arch-mini reaches the internet over Wi-Fi
+- name: Keep ethernet from taking the default route on control plane
   community.general.nmcli:
     conn_name: "Wired connection 1"
-    never_default4: false
+    never_default4: true
     state: present
   when: "'control_plane' in group_names"
   notify: reapply ethernet connection

@@ -1,0 +1,22 @@
+---
+# Networking only; safe to run without the rest of site.yml.
+- name: Route the homelab LAN through the control plane
+  hosts: control_plane
+  tags: [gateway]
+  roles:
+    - gateway
+
+- name: Send LAN hosts' internet traffic via the control plane
+  hosts: workers:dns
+  tags: [lan_route]
+  roles:
+    - lan_route
+
+- name: Pin k3s to the homelab LAN
+  hosts: control_plane
+  tags: [k3s_config]
+  tasks:
+    - name: Apply k3s server config
+      ansible.builtin.include_role:
+        name: k3s_server
+        tasks_from: config.yml

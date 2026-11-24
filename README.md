@@ -13,11 +13,27 @@ for the homelab LAN.
 | `pi-node-1` … `pi-node-3` | k3s workers | Debian 13 (Raspberry Pi 5) | arm64 |
 | `pi-hole` | DNS + ad-blocking (Pi-hole, outside k3s) | Debian 13 (Raspberry Pi 4) | arm64 |
 
+## Network
+
+```
+Pis + pi-hole ──eth──▶ GL.iNet (switch + DHCP) ──eth──▶ arch-mini ──Wi-Fi──▶ home router ──▶ internet
+```
+
+- The homelab LAN is `192.168.8.0/24` behind the GL.iNet travel router, which
+  only switches and hands out addresses (DNS: `pi-hole`). It has no uplink.
+- `arch-mini` is the LAN's internet gateway: its Wi-Fi joins the home network and
+  it NATs `192.168.8.0/24` out through it (`ansible/roles/gateway`). The other hosts
+  route via `192.168.8.130` (`ansible/roles/lan_route`).
+- k3s is pinned to the LAN address `192.168.8.130` (`/etc/rancher/k3s/config.yaml`),
+  not the Wi-Fi one.
+- `make network` applies just these settings, without the rest of `site.yml`.
+
 ## Stack
 
 | Layer | Tool | Where |
 |---|---|---|
 | Node provisioning | cloud-init + Ansible | `cloud-init/`, `ansible/` |
+| LAN gateway | arch-mini NAT (nftables) + static routes | `ansible/roles/gateway`, `ansible/roles/lan_route` |
 | Kubernetes | k3s (traefik ingress, servicelb disabled) | `ansible/roles/k3s_*` |
 | GitOps | Argo CD (app-of-apps) | `bootstrap/`, `apps/` |
 | LoadBalancer IPs | MetalLB (L2) | `apps/metallb*.yaml`, `infra/metallb/` |
@@ -74,16 +90,19 @@ becomes a managed app. From here on, cluster changes are pull requests.
 ## Repo Structure
 
 ```
-├── Makefile                  # ping / site / kubeconfig / argocd / root-app
+├── Makefile                  # ping / site / network / kubeconfig / argocd / root-app
 ├── cloud-init/
 │   └── user-data.yaml        # Pi first-boot template
 ├── ansible/
 │   ├── inventory.ini         # control_plane + workers + dns
 │   ├── group_vars/all.yml    # k3s version pin
 │   ├── site.yml              # full-cluster provisioning
+│   ├── network.yml           # gateway + LAN routes + k3s node address
 │   └── roles/
-│       ├── common/           # swap off, Pi cgroup flags
-│       ├── k3s_server/       # k3s server install + join token
+│       ├── common/           # swap off, worker Wi-Fi off, Pi cgroup flags
+│       ├── gateway/          # arch-mini forwards + NATs the LAN
+│       ├── lan_route/        # LAN hosts route via arch-mini
+│       ├── k3s_server/       # k3s config, install + join token
 │       └── k3s_agent/        # workers join the cluster
 ├── bootstrap/                # applied once, by hand
 │   ├── argocd/values.yaml

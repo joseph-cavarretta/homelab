@@ -1,0 +1,4 @@
+---
+- name: reapply lan connection
+  ansible.builtin.command: nmcli device reapply {{ lan_route_iface }}
+  changed_when: true

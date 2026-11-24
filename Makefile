@@ -2,7 +2,7 @@ INVENTORY := ansible/inventory.ini
 KUBECONFIG_SRC := /etc/rancher/k3s/k3s.yaml
 CONTROL_PLANE := arch-mini
 
-.PHONY: ping facts site playbook kubeconfig argocd root-app argocd-password
+.PHONY: ping facts site network playbook kubeconfig argocd root-app argocd-password
 
 # --- provisioning (ansible) ---
 
@@ -17,6 +17,10 @@ facts:
 # provision the whole cluster: base config + k3s server + agents
 site:
 	ansible-playbook -i $(INVENTORY) ansible/site.yml
+
+# networking only: arch-mini as LAN gateway, LAN routes, k3s node address
+network:
+	ansible-playbook -i $(INVENTORY) ansible/network.yml
 
 # run an arbitrary playbook: make playbook PLAYBOOK=foo.yml
 playbook:
