@@ -10,7 +10,7 @@ for the homelab LAN.
 | Host | Role | OS | Arch |
 |---|---|---|---|
 | `arch-mini` | k3s control plane | Arch Linux | x86_64 |
-| `pi-01` … `pi-03` | k3s workers | Ubuntu Server 24.04 | arm64 |
+| `pi-node-1` … `pi-node-3` | k3s workers | Debian 13 (Raspberry Pi 5) | arm64 |
 | `pi-hole` | DNS + ad-blocking (Pi-hole, outside k3s) | Debian 13 (Raspberry Pi 4) | arm64 |
 
 ## Stack
