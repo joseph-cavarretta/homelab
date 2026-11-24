@@ -2,7 +2,8 @@
 
 Kubernetes homelab: a k3s cluster on a Minisforum mini PC (control plane) and
 3x Raspberry Pi worker nodes, provisioned with Ansible and managed with
-GitOps via Argo CD.
+GitOps via Argo CD. A separate Raspberry Pi runs Pi-hole as DNS and ad-blocking
+for the homelab LAN.
 
 ## Hardware
 
@@ -10,6 +11,7 @@ GitOps via Argo CD.
 |---|---|---|---|
 | `arch-mini` | k3s control plane | Arch Linux | x86_64 |
 | `pi-01` … `pi-03` | k3s workers | Ubuntu Server 24.04 | arm64 |
+| `pi-hole` | DNS + ad-blocking (Pi-hole, outside k3s) | Debian 13 (Raspberry Pi 4) | arm64 |
 
 ## Stack
 
@@ -24,6 +26,7 @@ GitOps via Argo CD.
 | Cluster UI | Rancher | `apps/rancher.yaml` |
 | Object storage | Garage (S3-compatible) | `apps/garage.yaml` |
 | ML tracking | MLflow (backed by Garage S3) | `apps/mlflow.yaml` |
+| DNS & ad-blocking | Pi-hole on a dedicated Pi | `ansible/inventory.ini` (`[dns]`) |
 
 ## Bootstrap Runbook
 
@@ -75,7 +78,7 @@ becomes a managed app. From here on, cluster changes are pull requests.
 ├── cloud-init/
 │   └── user-data.yaml        # Pi first-boot template
 ├── ansible/
-│   ├── inventory.ini         # control_plane + workers
+│   ├── inventory.ini         # control_plane + workers + dns
 │   ├── group_vars/all.yml    # k3s version pin
 │   ├── site.yml              # full-cluster provisioning
 │   └── roles/
@@ -100,6 +103,17 @@ becomes a managed app. From here on, cluster changes are pull requests.
         ├── ip-allowlist.yaml
         └── traefik-config.yaml
 ```
+
+## DNS (Pi-hole)
+
+`pi-hole` (`192.168.8.108`, wired) runs Pi-hole v6 directly on the host, not in
+the cluster, so name resolution keeps working when k3s is down. The GL.iNet
+router hands it out as the DNS server on the homelab LAN, and every node
+resolves through it. Upstream resolvers are Quad9 (`9.9.9.9`,
+`149.112.112.112`). The admin UI is at `http://192.168.8.108/admin/`.
+
+It sits in the `[dns]` inventory group, so `make ping` reaches it but
+`make site` (which targets `k3s_cluster`) leaves it alone.
 
 ## Adding an App
 
