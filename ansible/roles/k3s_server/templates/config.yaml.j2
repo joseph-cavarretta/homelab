@@ -4,3 +4,6 @@ node-ip: {{ ansible_host }}
 flannel-iface: {{ k3s_flannel_iface }}
 tls-san:
   - {{ ansible_host }}
+# MetalLB (managed by Argo CD) provides LoadBalancer IPs
+disable:
+  - servicelb
