@@ -17,6 +17,7 @@ spec:
         server:
           value_options:
             allowed_hosts: "mlflow.internal,mlflow-mlflow.mlflow.svc.cluster.local:5000,mlflow-mlflow.mlflow:5000"
+            workers: 1
           flag_options:
             - serve_artifacts
         storage:
