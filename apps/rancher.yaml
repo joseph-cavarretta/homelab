@@ -16,6 +16,10 @@ spec:
       valuesObject:
         hostname: rancher.internal
         replicas: 1
+        # keep Rancher off the control-plane node; any Pi will do
+        extraNodeSelectorTerms:
+          - key: node-role.kubernetes.io/control-plane
+            operator: DoesNotExist
         ingress:
           extraAnnotations:
             traefik.ingress.kubernetes.io/router.middlewares: cattle-system-lan-only@kubernetescrd
