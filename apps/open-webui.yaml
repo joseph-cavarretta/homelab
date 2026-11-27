@@ -1,0 +1,55 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: open-webui
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: default
+  source:
+    repoURL: https://helm.openwebui.com/
+    chart: open-webui
+    targetRevision: 18.3.0
+    helm:
+      valuesObject:
+        ollama:
+          enabled: false
+        pipelines:
+          enabled: false
+        # single replica: Open WebUI's in-memory websocket manager, no bundled Redis
+        websocket:
+          manager: ""
+          redis:
+            enabled: false
+        openaiBaseApiUrl: "http://llama-cpp.llm.svc:8080/v1"
+        extraEnvVars:
+          # created by hand, not in git: see the README
+          - name: WEBUI_SECRET_KEY
+            valueFrom:
+              secretKeyRef:
+                name: open-webui-secret
+                key: secret-key
+        persistence:
+          enabled: true
+          storageClass: local-path
+          # users, chats and settings live here; keep them if the app is removed
+          annotations:
+            argocd.argoproj.io/sync-options: Prune=false
+        nodeSelector:
+          kubernetes.io/hostname: arch-mini
+        ingress:
+          enabled: true
+          class: traefik
+          host: chat.internal
+          annotations:
+            traefik.ingress.kubernetes.io/router.middlewares: llm-lan-only@kubernetescrd
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: llm
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

@@ -18,5 +18,10 @@ spec:
     automated:
       prune: true
       selfHeal: true
+    # the llm namespace comes from the llama-cpp app; retry until it exists
+    retry:
+      limit: 5
+      backoff:
+        duration: 30s
     syncOptions:
       - CreateNamespace=true
