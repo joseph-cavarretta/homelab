@@ -42,6 +42,8 @@ Pis + pi-hole ──eth──▶ GL.iNet (switch + DHCP) ──eth──▶ arch
 | Cluster UI | Rancher | `apps/rancher.yaml` |
 | Object storage | Garage (S3-compatible) | `apps/garage.yaml` |
 | ML tracking | MLflow (backed by Garage S3) | `apps/mlflow.yaml` |
+| LLM serving | llama.cpp (Qwen3-8B Q4, CPU) | `apps/llama-cpp.yaml`, `infra/llama-cpp/` |
+| Chat UI | Open WebUI (`chat.internal`) | `apps/open-webui.yaml` |
 | DNS & ad-blocking | Pi-hole on a dedicated Pi | `ansible/inventory.ini` (`[dns]`) |
 
 ## Bootstrap Runbook
@@ -133,6 +135,20 @@ resolves through it. Upstream resolvers are Quad9 (`9.9.9.9`,
 
 It sits in the `[dns]` inventory group, so `make ping` reaches it but
 `make site` (which targets `k3s_cluster`) leaves it alone.
+
+## Open WebUI
+
+Chat UI at `http://chat.internal` (add `192.168.8.200 chat.internal` to `/etc/hosts`),
+backed by the llama.cpp server in the `llm` namespace. Before the first sync, create
+its session-signing key by hand (not stored in git):
+
+```bash
+kubectl -n llm create secret generic open-webui-secret \
+  --from-literal=secret-key="$(openssl rand -hex 32)"
+```
+
+The first account created becomes admin. Its PVC (users, chats, settings) is
+excluded from Argo CD pruning.
 
 ## Adding an App
 
