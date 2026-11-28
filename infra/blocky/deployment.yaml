@@ -66,8 +66,10 @@ spec:
             timeoutSeconds: 3
             failureThreshold: 5
           resources:
+            # More CPU weight than the default, so a busy node (llama.cpp on
+            # arch-mini) can't slow answers enough to push clients to their fallback.
             requests:
-              cpu: 50m
+              cpu: 200m
               memory: 128Mi
             limits:
               memory: 256Mi
