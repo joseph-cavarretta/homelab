@@ -1,0 +1,46 @@
+ports:
+  dns: 53
+  http: 4000
+
+prometheus:
+  enable: true
+
+# DNS-over-TLS by IP; the name after # is only used to verify the TLS certificate.
+upstreams:
+  groups:
+    default:
+      - tcp-tls:9.9.9.9:853#dns.quad9.net
+      - tcp-tls:149.112.112.112:853#dns.quad9.net
+      - tcp-tls:1.1.1.1:853#cloudflare-dns.com
+      - tcp-tls:1.0.0.1:853#cloudflare-dns.com
+
+# Resolves hostnames Blocky needs for itself, like blocklist URLs, so it never asks
+# the cluster DNS, which may be forwarding to Blocky.
+bootstrapDns:
+  - tcp+udp:9.9.9.9
+  - tcp+udp:1.1.1.1
+
+# A mapping covers the name and all its subdomains, so this answers every *.internal.
+customDNS:
+  mapping:
+    internal: 192.168.8.200
+
+blocking:
+  denylists:
+    ads:
+      - https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
+  clientGroupsBlock:
+    default:
+      - ads
+    # Nodes and pods get no blocking, so a list can't break image pulls or workloads.
+    192.168.8.130: []
+    192.168.8.142: []
+    192.168.8.145: []
+    192.168.8.161: []
+    10.42.0.0/16: []
+  loading:
+    # Answer queries right away and load lists in the background.
+    strategy: fast
+
+queryLog:
+  type: console
