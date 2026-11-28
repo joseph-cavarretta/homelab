@@ -15,6 +15,19 @@
     regexp: '^([^#].*\sswap\s.*)$'
     replace: '# \1'
 
+# k3s registers each node under its hostname
+- name: Set hostname to the inventory name
+  ansible.builtin.hostname:
+    name: "{{ inventory_hostname }}"
+  when: "'workers' in group_names"
+
+- name: Point 127.0.1.1 at the hostname
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.1\.1\s'
+    line: "127.0.1.1 {{ inventory_hostname }}"
+  when: "'workers' in group_names"
+
 - name: Check wifi radio state
   ansible.builtin.command: nmcli radio wifi
   register: wifi_radio_state
@@ -26,10 +39,13 @@
   when: "'workers' in group_names and wifi_radio_state.stdout | trim == 'enabled'"
   changed_when: true
 
-# the GL.iNet router has no uplink; arch-mini reaches the internet over Wi-Fi
-- name: Keep ethernet from taking the default route on control plane
+# The homelab LAN has no DHCP server and no uplink; arch-mini reaches the
+# internet over Wi-Fi.
+- name: Set a static LAN address on the control plane, without a default route
   community.general.nmcli:
     conn_name: "Wired connection 1"
+    method4: manual
+    ip4: "{{ ansible_host }}/24"
     never_default4: true
     state: present
   when: "'control_plane' in group_names"

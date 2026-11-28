@@ -1,4 +1,9 @@
 ---
 lan_route_connection: Wired connection 1
 lan_route_iface: eth0
+lan_route_prefix: 24
 lan_route_gateway: "{{ hostvars[groups['control_plane'][0]].ansible_host }}"
+# Blocky in the cluster first; a public resolver for when the cluster is down.
+lan_route_dns:
+  - 192.168.8.201
+  - 1.1.1.1

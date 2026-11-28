@@ -7,7 +7,7 @@
     - gateway
 
 - name: Send LAN hosts' internet traffic via the control plane
-  hosts: workers:dns
+  hosts: workers
   tags: [lan_route]
   roles:
     - lan_route

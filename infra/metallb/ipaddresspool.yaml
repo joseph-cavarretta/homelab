@@ -1,5 +1,5 @@
-# GL.iNet DHCP scope on the homelab LAN is 192.168.8.100-192.168.8.199;
-# this range stays clear of that plus the static node bindings.
+# Nodes have static addresses below .200 on the homelab LAN; this range stays
+# clear of them.
 apiVersion: metallb.io/v1beta1
 kind: IPAddressPool
 metadata:
