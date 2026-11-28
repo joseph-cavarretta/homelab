@@ -21,9 +21,15 @@ bootstrapDns:
   - tcp+udp:1.1.1.1
 
 # A mapping covers the name and all its subdomains, so this answers every *.internal.
+# The longest matching name wins, so the node names below override the wildcard.
 customDNS:
   mapping:
     internal: 192.168.8.200
+    arch-mini.lan.internal: 192.168.8.130
+    pi-node-1.lan.internal: 192.168.8.145
+    pi-node-2.lan.internal: 192.168.8.161
+    pi-node-3.lan.internal: 192.168.8.142
+    pi-node-4.lan.internal: 192.168.8.108
 
 blocking:
   denylists:
