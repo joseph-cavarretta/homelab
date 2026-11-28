@@ -11,6 +11,12 @@
       dns=none
   notify: reload NetworkManager
 
+# Apply dns=none before resolved starts. Otherwise NetworkManager sees resolved
+# start, pushes the Wi-Fi's DHCP DNS server into it as a link server, and that
+# server answers alongside Blocky. Reloading afterwards doesn't remove it.
+- name: Reload NetworkManager before starting resolved
+  ansible.builtin.meta: flush_handlers
+
 # Arch ships no drop-in directory for resolved.
 - name: Create the systemd-resolved drop-in directory
   ansible.builtin.file:
