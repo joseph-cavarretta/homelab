@@ -11,6 +11,13 @@
       dns=none
   notify: reload NetworkManager
 
+# Arch ships no drop-in directory for resolved.
+- name: Create the systemd-resolved drop-in directory
+  ansible.builtin.file:
+    path: /etc/systemd/resolved.conf.d
+    state: directory
+    mode: "0755"
+
 # systemd-resolved uses the servers in order and moves to the next one when a
 # server stops answering, so a cluster outage falls back to the home router.
 - name: Configure systemd-resolved servers
