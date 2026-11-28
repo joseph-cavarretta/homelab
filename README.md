@@ -1,29 +1,33 @@
 # Homelab
 
 Kubernetes homelab: a k3s cluster on a Minisforum mini PC (control plane) and
-3x Raspberry Pi worker nodes, provisioned with Ansible and managed with
-GitOps via Argo CD. A separate Raspberry Pi runs Pi-hole as DNS and ad-blocking
-for the homelab LAN.
+4x Raspberry Pi worker nodes, provisioned with Ansible and managed with
+GitOps via Argo CD. Blocky, running in the cluster, is the DNS and ad-blocking
+server for the homelab LAN.
 
 ## Hardware
 
 | Host | Role | OS | Arch |
 |---|---|---|---|
 | `arch-mini` | k3s control plane | Arch Linux | x86_64 |
-| `pi-node-1` … `pi-node-3` | k3s workers | Debian 13 (Raspberry Pi 5) | arm64 |
-| `pi-hole` | DNS + ad-blocking (Pi-hole, outside k3s) | Debian 13 (Raspberry Pi 4) | arm64 |
+| `pi-node-1` … `pi-node-3` | k3s workers | Debian 13 (Raspberry Pi 5, 8 GB) | arm64 |
+| `pi-node-4` | k3s worker | Debian 13 (Raspberry Pi 4, 2 GB) | arm64 |
 
 ## Network
 
 ```
-Pis + pi-hole ──eth──▶ GL.iNet (switch + DHCP) ──eth──▶ arch-mini ──Wi-Fi──▶ home router ──▶ internet
+Pis ──eth──▶ switch ◀──eth── arch-mini ──Wi-Fi──▶ home router ──▶ internet
 ```
 
-- The homelab LAN is `192.168.8.0/24` behind the GL.iNet travel router, which
-  only switches and hands out addresses (DNS: `pi-hole`). It has no uplink.
+- The homelab LAN is `192.168.8.0/24` on a plain switch. It has no DHCP server:
+  every node has a static address, set by Ansible from `ansible_host` in
+  `ansible/inventory.ini` (`ansible/roles/lan_route` on the Pis,
+  `ansible/roles/common` on arch-mini).
 - `arch-mini` is the LAN's internet gateway: its Wi-Fi joins the home network and
-  it NATs `192.168.8.0/24` out through it (`ansible/roles/gateway`). The other hosts
-  route via `192.168.8.130` (`ansible/roles/lan_route`).
+  it NATs `192.168.8.0/24` out through it (`ansible/roles/gateway`). The Pis
+  route via `192.168.8.130`.
+- The Pis resolve names through Blocky (`192.168.8.201`), then `1.1.1.1` when the
+  cluster is down. arch-mini uses the home router's DNS.
 - k3s is pinned to the LAN address `192.168.8.130` (`/etc/rancher/k3s/config.yaml`),
   not the Wi-Fi one.
 - `make network` applies just these settings, without the rest of `site.yml`.
@@ -33,7 +37,7 @@ Pis + pi-hole ──eth──▶ GL.iNet (switch + DHCP) ──eth──▶ arch
 | Layer | Tool | Where |
 |---|---|---|
 | Node provisioning | cloud-init + Ansible | `cloud-init/`, `ansible/` |
-| LAN gateway | arch-mini NAT (nftables) + static routes | `ansible/roles/gateway`, `ansible/roles/lan_route` |
+| LAN gateway | arch-mini NAT (nftables) + static addresses and routes | `ansible/roles/gateway`, `ansible/roles/lan_route` |
 | Kubernetes | k3s (traefik ingress, servicelb disabled) | `ansible/roles/k3s_*` |
 | GitOps | Argo CD (app-of-apps) | `bootstrap/`, `apps/` |
 | LoadBalancer IPs | MetalLB (L2) | `apps/metallb*.yaml`, `infra/metallb/` |
@@ -44,7 +48,7 @@ Pis + pi-hole ──eth──▶ GL.iNet (switch + DHCP) ──eth──▶ arch
 | ML tracking | MLflow (backed by Garage S3) | `apps/mlflow.yaml` |
 | LLM serving | llama.cpp (Qwen3-8B Q4, CPU) | `apps/llama-cpp.yaml`, `infra/llama-cpp/` |
 | Chat UI | Open WebUI (`chat.internal`) | `apps/open-webui.yaml` |
-| DNS & ad-blocking | Pi-hole on a dedicated Pi | `ansible/inventory.ini` (`[dns]`) |
+| DNS & ad-blocking | Blocky (2 replicas, MetalLB `192.168.8.201`) | `apps/blocky.yaml`, `infra/blocky/` |
 
 ## Bootstrap Runbook
 
@@ -53,10 +57,12 @@ whatever is in this repo's `apps/` and `infra/` directories on `main`.
 
 ### 1. Flash the Pis
 
-Flash Ubuntu Server 24.04 (64-bit) with Raspberry Pi Imager, using
+Flash Raspberry Pi OS (64-bit, Debian 13) with Raspberry Pi Imager, using
 `cloud-init/user-data.yaml` for first-boot config (hostname per node, user,
-SSH key). Give each Pi a DHCP reservation and record the addresses in
-`ansible/inventory.ini`.
+SSH key). The LAN has no DHCP server, so give each new Pi a static address in
+the `192.168.8.0/24` range below `.200` at first boot (for example with a
+cloud-init `network-config`), and record it in
+`ansible/inventory.ini`. `make network` then manages the address from there.
 
 ### 2. Verify connectivity
 
@@ -96,28 +102,34 @@ becomes a managed app. From here on, cluster changes are pull requests.
 ├── cloud-init/
 │   └── user-data.yaml        # Pi first-boot template
 ├── ansible/
-│   ├── inventory.ini         # control_plane + workers + dns
+│   ├── inventory.ini         # control_plane + workers
 │   ├── group_vars/all.yml    # k3s version pin
 │   ├── site.yml              # full-cluster provisioning
 │   ├── network.yml           # gateway + LAN routes + k3s node address
 │   └── roles/
-│       ├── common/           # swap off, worker Wi-Fi off, Pi cgroup flags
+│       ├── common/           # swap off, hostnames, worker Wi-Fi off, Pi cgroup flags,
+│       │                     # arch-mini static LAN address
 │       ├── gateway/          # arch-mini forwards + NATs the LAN
-│       ├── lan_route/        # LAN hosts route via arch-mini
+│       ├── lan_route/        # Pi static addresses + DNS, route via arch-mini
 │       ├── k3s_server/       # k3s config, install + join token
 │       └── k3s_agent/        # workers join the cluster
 ├── bootstrap/                # applied once, by hand
 │   ├── argocd/values.yaml
 │   └── root-app.yaml         # app-of-apps entry point
 ├── apps/                     # Argo CD Applications (one file per app)
+│   ├── blocky.yaml
 │   ├── cert-manager.yaml
 │   ├── garage.yaml
+│   ├── llama-cpp.yaml
 │   ├── metallb.yaml
 │   ├── metallb-config.yaml
 │   ├── mlflow.yaml
+│   ├── open-webui.yaml
 │   ├── rancher.yaml
 │   └── traefik-middleware.yaml
 └── infra/                    # raw manifests / values referenced by apps
+    ├── blocky/               # kustomize: Deployment, Service, PDB + config.yml
+    ├── llama-cpp/
     ├── metallb/
     │   └── ipaddresspool.yaml
     └── traefik/
@@ -125,16 +137,20 @@ becomes a managed app. From here on, cluster changes are pull requests.
         └── traefik-config.yaml
 ```
 
-## DNS (Pi-hole)
+## DNS (Blocky)
 
-`pi-hole` (`192.168.8.108`, wired) runs Pi-hole v6 directly on the host, not in
-the cluster, so name resolution keeps working when k3s is down. The GL.iNet
-router hands it out as the DNS server on the homelab LAN, and every node
-resolves through it. Upstream resolvers are Quad9 (`9.9.9.9`,
-`149.112.112.112`). The admin UI is at `http://192.168.8.108/admin/`.
+Blocky runs as two replicas on separate Pis behind the MetalLB IP
+`192.168.8.201` (UDP and TCP 53). Its whole config is `infra/blocky/config.yml`;
+kustomize turns it into a ConfigMap whose name includes a hash of the file, so
+editing it and merging rolls the pods.
 
-It sits in the `[dns]` inventory group, so `make ping` reaches it but
-`make site` (which targets `k3s_cluster`) leaves it alone.
+- Upstreams: Quad9 and Cloudflare over DNS-over-TLS, by IP.
+- `*.internal` answers with Traefik's IP (`192.168.8.200`).
+- Ad-blocking applies to clients outside the homelab LAN. Nodes (`192.168.8.0/24`)
+  and pods (`10.42.0.0/16`) are never blocked, so a list can't break image pulls.
+
+The Pis list `1.1.1.1` as their second DNS server, so they can still resolve
+names and pull images when the cluster is down.
 
 ## Open WebUI
 
