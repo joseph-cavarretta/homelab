@@ -1,0 +1,37 @@
+---
+# All of arch-mini's DNS goes through Blocky (ad blocking, DNS-over-TLS upstream).
+# NetworkManager stops managing DNS, so the home router's DHCP-provided server
+# can't answer in parallel and slip ads past the blocklist.
+- name: Stop NetworkManager managing DNS
+  ansible.builtin.copy:
+    dest: /etc/NetworkManager/conf.d/90-dns-none.conf
+    mode: "0644"
+    content: |
+      [main]
+      dns=none
+  notify: reload NetworkManager
+
+# systemd-resolved uses the servers in order and moves to the next one when a
+# server stops answering, so a cluster outage falls back to the home router.
+- name: Configure systemd-resolved servers
+  ansible.builtin.copy:
+    dest: /etc/systemd/resolved.conf.d/90-homelab.conf
+    mode: "0644"
+    content: |
+      [Resolve]
+      DNS={{ local_dns_servers | join(' ') }}
+      Domains=~.
+  notify: restart systemd-resolved
+
+- name: Enable and start systemd-resolved
+  ansible.builtin.systemd_service:
+    name: systemd-resolved
+    enabled: true
+    state: started
+
+- name: Point resolv.conf at the systemd-resolved stub
+  ansible.builtin.file:
+    src: /run/systemd/resolve/stub-resolv.conf
+    dest: /etc/resolv.conf
+    state: link
+    force: true

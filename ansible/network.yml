@@ -20,3 +20,11 @@
       ansible.builtin.include_role:
         name: k3s_server
         tasks_from: config.yml
+
+# After k3s_config: k3s must already read its own resolv.conf before
+# /etc/resolv.conf becomes the 127.0.0.53 stub, which pods can't reach.
+- name: Send the control plane's DNS through Blocky
+  hosts: control_plane
+  tags: [local_dns]
+  roles:
+    - local_dns

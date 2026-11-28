@@ -1,0 +1,5 @@
+---
+# Blocky's MetalLB address first; the home router answers when the cluster is down.
+local_dns_servers:
+  - 192.168.8.201
+  - 192.168.0.1

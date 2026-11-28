@@ -1,2 +1,4 @@
 ---
 k3s_flannel_iface: enp2s0
+# CoreDNS upstream. The home router: plain DNS that works without the cluster.
+k3s_upstream_dns: 192.168.0.1
