@@ -43,6 +43,10 @@ blocking:
   clientGroupsBlock:
     default:
       - ads
+    # arch-mini's own lookups arrive from its flannel address. Blocky applies every
+    # group a client matches, so this adds ads to the "none" from 10.42.0.0/16.
+    10.42.0.0/32:
+      - ads
     # Nodes and pods get no blocking, so a list can't break image pulls or workloads.
     # Queries from the nodes themselves arrive from their 10.42.x cluster addresses.
     192.168.8.0/24:

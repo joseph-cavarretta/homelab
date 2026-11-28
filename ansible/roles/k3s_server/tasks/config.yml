@@ -5,6 +5,13 @@
     state: directory
     mode: "0755"
 
+- name: Write k3s upstream DNS servers
+  ansible.builtin.copy:
+    dest: /etc/rancher/k3s/resolv.conf
+    content: "nameserver {{ k3s_upstream_dns }}\n"
+    mode: "0644"
+  notify: restart k3s
+
 - name: Write k3s server config
   ansible.builtin.template:
     src: config.yaml.j2

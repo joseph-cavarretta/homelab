@@ -2,6 +2,9 @@
 # default route: Wi-Fi, whose address the home router assigns and can change.
 node-ip: {{ ansible_host }}
 flannel-iface: {{ k3s_flannel_iface }}
+# CoreDNS forwards to the servers in this file. A file of its own keeps cluster
+# lookups on the home router, off Blocky's blocklist and off the host's stub.
+resolv-conf: /etc/rancher/k3s/resolv.conf
 tls-san:
   - {{ ansible_host }}
 # MetalLB (managed by Argo CD) provides LoadBalancer IPs
