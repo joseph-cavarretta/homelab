@@ -1,6 +1,6 @@
 ---
 # arch-mini routes the homelab LAN to the internet over its Wi-Fi uplink; the
-# GL.iNet router is only a switch + DHCP. Not Arch's nftables.service: its default
+# LAN itself is a plain switch. Not Arch's nftables.service: its default
 # /etc/nftables.conf flushes the whole ruleset, which would wipe k3s's rules.
 - name: Keep IPv4 forwarding on across reboots
   ansible.builtin.copy:
