@@ -3,3 +3,12 @@
 local_dns_servers:
   - 192.168.8.201
   - 192.168.0.1
+
+# Kept in /etc/hosts as well as Blocky, so arch-mini can reach Argo CD and the
+# other apps while Blocky is down: Argo CD is how a broken Blocky gets fixed.
+local_dns_ingress_ip: 192.168.8.200
+local_dns_internal_names:
+  - argocd.internal
+  - rancher.internal
+  - mlflow.internal
+  - chat.internal

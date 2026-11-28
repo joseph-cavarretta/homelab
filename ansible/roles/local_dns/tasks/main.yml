@@ -42,3 +42,51 @@
     dest: /etc/resolv.conf
     state: link
     force: true
+
+- name: Keep the internal app names in /etc/hosts
+  ansible.builtin.blockinfile:
+    path: /etc/hosts
+    marker: "# {mark} homelab internal names (managed by Ansible)"
+    block: "{{ local_dns_ingress_ip }} {{ local_dns_internal_names | join(' ') }}"
+
+- name: Install the resolver recovery script
+  ansible.builtin.template:
+    src: homelab-dns-recover.py.j2
+    dest: /usr/local/bin/homelab-dns-recover
+    mode: "0755"
+
+- name: Install the resolver recovery units
+  ansible.builtin.copy:
+    dest: "/etc/systemd/system/{{ item.name }}"
+    mode: "0644"
+    content: "{{ item.content }}"
+  loop:
+    - name: homelab-dns-recover.service
+      content: |
+        [Unit]
+        Description=Switch systemd-resolved back to Blocky once it answers
+        After=systemd-resolved.service
+
+        [Service]
+        Type=oneshot
+        ExecStart=/usr/local/bin/homelab-dns-recover
+    - name: homelab-dns-recover.timer
+      content: |
+        [Unit]
+        Description=Check every minute whether resolved should return to Blocky
+
+        [Timer]
+        OnBootSec=1min
+        OnUnitActiveSec=1min
+
+        [Install]
+        WantedBy=timers.target
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Enable the resolver recovery timer
+  ansible.builtin.systemd_service:
+    name: homelab-dns-recover.timer
+    enabled: true
+    state: started
+    daemon_reload: true

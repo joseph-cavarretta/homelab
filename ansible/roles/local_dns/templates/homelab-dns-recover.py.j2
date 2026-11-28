@@ -1,0 +1,43 @@
+#!/usr/bin/python3
+# systemd-resolved stays on a fallback server until that server fails, so after
+# one slow answer from Blocky it would keep using the home router indefinitely.
+# This restarts resolved, which starts again from the first server, once Blocky
+# answers again.
+import socket
+import struct
+import subprocess
+import sys
+
+PRIMARY = "{{ local_dns_servers[0] }}"
+# Any .internal name: Blocky answers it from its own config, with no upstream.
+PROBE = "{{ local_dns_internal_names[0] }}"
+
+
+def primary_answers() -> bool:
+    labels = b"".join(bytes([len(p)]) + p.encode() for p in PROBE.split("."))
+    query = struct.pack(">HHHHHH", 0x6D6D, 0x0100, 1, 0, 0, 0) + labels
+    query += b"\0" + struct.pack(">HH", 1, 1)
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+        sock.settimeout(2)
+        try:
+            sock.sendto(query, (PRIMARY, 53))
+            reply = sock.recv(512)
+        except OSError:
+            return False
+    return struct.unpack(">H", reply[6:8])[0] > 0
+
+
+def current_server() -> str:
+    status = subprocess.run(
+        ["resolvectl", "status", "--no-pager"], capture_output=True, text=True
+    ).stdout
+    for line in status.splitlines():
+        if line.strip().startswith("Current DNS Server:"):
+            return line.split(":", 1)[1].strip()
+    return ""
+
+
+if current_server() != PRIMARY and primary_answers():
+    print(f"{PRIMARY} answers again; restarting systemd-resolved")
+    subprocess.run(["systemctl", "restart", "systemd-resolved"], check=True)
+sys.exit(0)
